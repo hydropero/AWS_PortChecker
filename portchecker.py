@@ -13,7 +13,7 @@ def port_parser(sec_groups, ec2):
         s_group = ec2.SecurityGroup(sec_group['GroupId']).ip_permissions
         if len(s_group) == 1:
             flat_sec_rules.append(s_group[0])
-            parsed_rule = {
+            parsed_rule = { 
             'group_name': group_name,
             'group_id': group_id,
             }
@@ -46,10 +46,8 @@ def port_parser(sec_groups, ec2):
         count += 1
     return parsed_sec_rules
 
-
-
 ssh = paramiko.SSHClient()
-key = paramiko.RSAKey.from_private_key_file("./MylesAWSKey.pem")
+key = paramiko.RSAKey.from_private_key_file("./MylesNewKey.pem")
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 table = Table(title="Port Security Overview")
 table.add_column("Public Hostname", justify="right", style="cyan", no_wrap=True)
@@ -62,12 +60,20 @@ table.add_column("Protocol", justify="right", style="cyan", no_wrap=True)
 table.add_column("Source IP Range", justify="right", style="cyan", no_wrap=True)
 table.add_column("Linux Ports", justify="right", style="cyan", no_wrap=True)
 
+table2 = Table(title="Unsafe Instances", caption="Consider Locking Down These Open Ports")
+table2.add_column("Public Hostname", justify="right", style="cyan", no_wrap=True)
+table2.add_column("Resource Name", justify="right", style="cyan", no_wrap=True)
+table2.add_column("Ports", justify="right", style="cyan", no_wrap=True)
+
+
 # Let's use Amazon S3
 ec2 = boto3.resource('ec2')
 ec2_instant_sec_groups = []
 current_sec_groups = []
 flat_sec_group_detailed = []
 complete_security_objects_list = []
+hosts_with_ports = {}
+unsafe_instances = []
 
 count = 0
 for instance in ec2.instances.all():
@@ -91,7 +97,7 @@ for instance in ec2.instances.all():
     linux_ports = [str(i) for i in linux_ports_ints]
     linux_ports = ' '.join(linux_ports)
     print(linux_ports)
-    
+    hosts_with_ports[current_hostname] = [linux_ports_ints, ec2.Instance(instance_id).tags[0]['Value']]
 
     ssh.close()
     parsed_sec_rules = []
@@ -139,21 +145,23 @@ for instance in ec2.instances.all():
     #             ec2_instance_info['ports'] = rule['ports']
     #             ec2_instance_info['protocol'] = rule['protocol']
     #             ec2_instance_info['source_ip_range'] = rule['source_ip_range']
-    #             ec2_instance_info['linux_ports'] = str(linux_ports)
+    #             ec2_instance_info['linux_port s'] = str(linux_ports)
     #             print(f'this is rule after {rule}')
     #             complete_security_objects_list.append(ec2_instance_info)
         
-
+print(f'this is hosts_with_ports {hosts_with_ports}')
 print(complete_security_objects_list)
 
-instances_by_openports = []
+instances_by_openports = {}
 for sec_obj in complete_security_objects_list:
     print(f'\n\n this is sec_object: {sec_obj}\n\n')
-    if any(sec_obj['resource_name'] in d for d in instances_by_openports) != True:
+    if sec_obj['public_hostname'] not in instances_by_openports:
+        print(instances_by_openports)
+        print(f"this is {sec_obj['public_hostname']}")
         if '-' not in str(sec_obj['ports']):
             print(f"this is ports {sec_obj['ports']}")
             ports = [sec_obj['ports']]
-            instances_by_openports.append({ sec_obj['resource_name']: ports })
+            instances_by_openports[sec_obj['public_hostname']] = ports
         else:
             split_value = sec_obj['ports'].split('-')
             start = int(split_value[0])
@@ -161,26 +169,49 @@ for sec_obj in complete_security_objects_list:
             port_list = []
             for i in range(start, stop):
                 port_list.append(i)
-            instances_by_openports.append({ sec_obj['resource_name']: port_list })
+            instances_by_openports[sec_obj['public_hostname']] = port_list
     else:
-        print('else triggered!!!!!!!!!!')
+        print('else triggered!')
         if '-' not in str(sec_obj['ports']):
-            instances_by_openports[sec_obj['resource_name']] += sec_obj['ports']
+            instances_by_openports[sec_obj['public_hostname']] += [sec_obj['ports']]
         else:
             split_value = sec_obj['ports'].split('-')
             start = split_value[0]
             stop = split_value[1]
             port_list = []
-            for i in range(start, stop):
-                instances_by_openports[sec_obj['resource_name']] += i
-            #instances_by_openports[sec_obj['resource_name']] += port_list    
+            for i in range(int(start), (int(stop) + 1)):
+                if i not in instances_by_openports[sec_obj['public_hostname']]:
+                    instances_by_openports[sec_obj['public_hostname']] += [i]
+    instances_by_openports[sec_obj['public_hostname']].sort()
+            #instances_by_openports[sec_obj['resource_name']] += port_list
+    
+
     print("\n\n\n")
     pprint(instances_by_openports)
     print("\n\n\n")
 
+
+print("\n\n\n\n\n\n\n", hosts_with_ports)
 # print("\n\n\n")
 # pprint(instances_by_openports)
 # print("\n\n\n")
+
+for host in hosts_with_ports.keys():
+    current_linux_hostname = host
+    current_linux_ports = hosts_with_ports[host][0]
+    current_instance_name = hosts_with_ports[host][1]
+    current_aws_ports = instances_by_openports[current_linux_hostname]
+    resulting_ports = list(set(current_aws_ports) - set(current_linux_ports))
+    unsafe_instance = {}
+    unsafe_instance[current_linux_hostname] = [resulting_ports, current_instance_name]
+    unsafe_instances.append(unsafe_instance)
+
+
+
+print(f'$$$$$$$$${unsafe_instances}')
+
+
+
 
 for sec_obj in complete_security_objects_list:
     table.add_row(
@@ -193,14 +224,22 @@ for sec_obj in complete_security_objects_list:
         str(sec_obj['protocol']),
         str(sec_obj['source_ip_range']),
         str(sec_obj['linux_ports'])
-
     )
 
+for instance in unsafe_instances:
+    hostname = list(instance.keys())[0]
+    table2.add_row(
+        str(hostname),
+        str(instance[hostname][1]),
+        str(instance[hostname][0]),
 
+    )
 
 console = Console()
 console.print(table)
 
+console = Console()
+console.print(table2)
 
 
     #print(ec2_instance_info)  
