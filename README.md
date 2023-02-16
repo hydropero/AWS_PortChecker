@@ -8,6 +8,7 @@ Script creates two ASCII tables. The first provides the following information, w
 This information when retrieved from the API is structured hierarchically, and must be flatted to be presented in table format (by far the most challenging portion of the project).
 
 <br>
+<br>
 
 Be sure to change out the location specified for your SSH key, and the AWS CLI must be configured on your PC as well. Screenshots available below.
 
