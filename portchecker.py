@@ -3,6 +3,7 @@ from pprint import pprint
 from rich import print
 from rich.console import Console
 from rich.table import Table
+import subprocess
 
 def port_parser(sec_groups, ec2):
     flat_sec_rules = []
@@ -47,7 +48,9 @@ def port_parser(sec_groups, ec2):
     return parsed_sec_rules
 
 ssh = paramiko.SSHClient()
-key = paramiko.RSAKey.from_private_key_file("./MylesNewKey.pem")
+# key_path = subprocess.Popen(['ls '])
+# print(key_path.stdout)
+key = paramiko.RSAKey.from_private_key_file("/Users/mbulla/.ssh/MylesNewKey.pem")
 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 table = Table(title="Port Security Overview")
 table.add_column("Public Hostname", justify="right", style="cyan", no_wrap=True)
@@ -65,8 +68,6 @@ table2.add_column("Public Hostname", justify="right", style="cyan", no_wrap=True
 table2.add_column("Resource Name", justify="right", style="cyan", no_wrap=True)
 table2.add_column("Ports", justify="right", style="cyan", no_wrap=True)
 
-
-# Let's use Amazon S3
 ec2 = boto3.resource('ec2')
 ec2_instant_sec_groups = []
 current_sec_groups = []
@@ -101,21 +102,8 @@ for instance in ec2.instances.all():
 
     ssh.close()
     parsed_sec_rules = []
-    #print(f'linux ports: {linux_ports}')
     sec_rules = port_parser(all_instance_sec_groups_full, ec2)
-    #print('\n\n' + str(sec_rules) + '\n\n')
-    # arraytest = []
-    # for item in sec_rules:
-    #     for i in range(len(item)):
-    #         arraytest += item
-
     small_parsed_sec_rules = []
-    print(f'this is sec_rules {sec_rules}')
-
-    # iterates through ec2 instances
-    # interate through rules in a set of rules per instance
-
-    print(f'this is ec2_info {ec2_instance_info}')
     array_out = []
     for rule in sec_rules:
         rule = dict(rule)
@@ -123,34 +111,6 @@ for instance in ec2.instances.all():
         rule['linux_ports'] = linux_ports
         complete_security_objects_list.append(rule)
         #complete_security_objects_list.append(array_out)
-
-    # for rule in sec_rules:
-    #     print(f'this is rule {rule}')
-    #     print(len(rule))
-    #     for count, rule in enumerate(rule):
-    #         print(count,rule)
-    #         print(f'this is subrule {rule}')
-    #         if count != 0:
-    #             ec2_instance_info['group_name'] = rule[count]['group_name']
-    #             ec2_instance_info['group_id'] = rule[count]['group_id']
-    #             ec2_instance_info['ports'] = rule[count]['ports']
-    #             ec2_instance_info['protocol'] = rule[count]['protocol']
-    #             ec2_instance_info['source_ip_range'] = rule[count]['source_ip_range']
-    #             ec2_instance_info['linux_ports'] = str(linux_ports)
-    #             print(f'this is rule after {rule}')
-    #             complete_security_objects_list.append(ec2_instance_info)
-    #         else:
-    #             ec2_instance_info['group_name'] = rule['group_name']
-    #             ec2_instance_info['group_id'] = rule['group_id']
-    #             ec2_instance_info['ports'] = rule['ports']
-    #             ec2_instance_info['protocol'] = rule['protocol']
-    #             ec2_instance_info['source_ip_range'] = rule['source_ip_range']
-    #             ec2_instance_info['linux_port s'] = str(linux_ports)
-    #             print(f'this is rule after {rule}')
-    #             complete_security_objects_list.append(ec2_instance_info)
-        
-print(f'this is hosts_with_ports {hosts_with_ports}')
-print(complete_security_objects_list)
 
 instances_by_openports = {}
 for sec_obj in complete_security_objects_list:
@@ -184,17 +144,6 @@ for sec_obj in complete_security_objects_list:
                     instances_by_openports[sec_obj['public_hostname']] += [i]
     instances_by_openports[sec_obj['public_hostname']].sort()
             #instances_by_openports[sec_obj['resource_name']] += port_list
-    
-
-    print("\n\n\n")
-    pprint(instances_by_openports)
-    print("\n\n\n")
-
-
-print("\n\n\n\n\n\n\n", hosts_with_ports)
-# print("\n\n\n")
-# pprint(instances_by_openports)
-# print("\n\n\n")
 
 for host in hosts_with_ports.keys():
     current_linux_hostname = host
@@ -205,13 +154,6 @@ for host in hosts_with_ports.keys():
     unsafe_instance = {}
     unsafe_instance[current_linux_hostname] = [resulting_ports, current_instance_name]
     unsafe_instances.append(unsafe_instance)
-
-
-
-print(f'$$$$$$$$${unsafe_instances}')
-
-
-
 
 for sec_obj in complete_security_objects_list:
     table.add_row(
@@ -237,28 +179,6 @@ for instance in unsafe_instances:
 
 console = Console()
 console.print(table)
-
+print('\n\n')
 console = Console()
 console.print(table2)
-
-
-    #print(ec2_instance_info)  
-
-# print(len(ec2.SecurityGroup(sec_group['GroupId']).ip_permissions))
-
-
-# all_instance_sec_groups_full = ec2.Instance(instance_id).security_groups
-# for item in all_instance_sec_groups_full:
-#     print(item['GroupId'])
-
-#     pprint(ec2.SecurityGroup(item['GroupId']).ip_permissions)
-
-
-
-# to get AWS open ports I need to compile an array of all ports collected from all sec groups attached to an ec2 inst.
-
-# Get Sec Group resource and it's details
-# Must get ID of security group not EC2 Instance 
-# pprint(ec2.SecurityGroup(instance_id).ip_permissions)
-
-# pprint(ec2.Instance(instance_id).public_ip_address)

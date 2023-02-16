@@ -3,6 +3,7 @@ __pycache__/
 virtualenv/
 # C extensions
 *.so
+*.pem
 
 # Distribution / packaging
 bin/
