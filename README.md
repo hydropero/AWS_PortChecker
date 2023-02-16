@@ -10,6 +10,6 @@ Be sure to change out the location specified for your SSH key, and the AWS CLI m
 
 
 
-[AWS_ALL_ITEMS](https://github.com/hydropero/AWS_PortChecker/blob/Main/images/Screen%20Shot%202023-02-10%20at%207.33.17%20AM.png?raw=true)
+![AWS_ALL_ITEMS](https://github.com/hydropero/AWS_PortChecker/blob/Main/images/Screen%20Shot%202023-02-10%20at%207.33.17%20AM.png?raw=true)
 
-[INSECURE_INSTANCES](https://github.com/hydropero/AWS_PortChecker/blob/Main/images/Screen%20Shot%202023-02-15%20at%207.14.30%20PM.png?raw=true)
+![INSECURE_INSTANCES](https://github.com/hydropero/AWS_PortChecker/blob/Main/images/Screen%20Shot%202023-02-15%20at%207.14.30%20PM.png?raw=true)
