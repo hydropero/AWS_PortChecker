@@ -4,7 +4,7 @@
 Script creates two ASCII tables. The first provides the following information, with each row containing one security group rule. The second contains only results where ports were left open via the applied security group for instance, that aren't also open on the Linux OS hosted on the instance.
 
 <br>
-
+<br>
 This information when retrieved from the API is structured hierarchically, and must be flatted to be presented in table format (by far the most challenging portion of the project).
 
 <br>
