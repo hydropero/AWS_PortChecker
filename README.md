@@ -1,6 +1,5 @@
 # AWS Port Checker
 ### This project was created to help identify which ports are being left open unnecessarily either on EC2 instances or within the Linux distro running on the instance.
-<br>
 Script creates two ASCII tables. The first provides the following information, with each row containing one security group rule. The second contains only results where ports were left open via the applied security group for instance, that aren't also open on the Linux OS hosted on the instance.
 
 <br>
